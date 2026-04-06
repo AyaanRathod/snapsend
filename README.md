@@ -2,12 +2,9 @@
 
 SnapSpend is an offline-first, AI-powered personal expense tracker built with Flutter. It utilizes on-device Machine Learning (Google ML Kit) to automatically scan, crop, and extra totals from physical receipts without ever requiring a cloud connection.
 
-<div align="center">
-  <!-- Placeholders for Screenshots -->
-  <img src="https://via.placeholder.com/250x550.png?text=Dashboard" width="200" />
-  <img src="https://via.爱好placeholder.com/250x550.png?text=ML+Scanner" width="200" />
-  <img src="https://via.placeholder.com/250x550.png?text=Insights" width="200" />
-</div>
+
+  ![alt text](image.png)
+  ![alt text](image-1.png)
 
 ## Features ✨
 
@@ -69,5 +66,4 @@ flutter build apk --release
 You will find the generated universal APK inside:  
 `build/app/outputs/flutter-apk/app-release.apk`
 
----
-*Developed for mobile computing curriculum and everyday expense automation.*
+
