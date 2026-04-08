@@ -13,6 +13,8 @@ class InsightsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return SafeArea(
       child: Consumer3<ExpenseViewModel, CategoryViewModel, SettingsViewModel>(
         builder: (context, expenses, categories, settings, _) {
@@ -31,11 +33,11 @@ class InsightsScreen extends StatelessWidget {
               ),
 
               if (!expenses.hasExpenses)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   child: Center(
                     child: Text(
                       'Not enough data to show insights.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                   ),
                 )
@@ -48,7 +50,7 @@ class InsightsScreen extends StatelessWidget {
                       height: 250,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
+                        color: colors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.lg),
                       ),
                       child: Column(
@@ -91,7 +93,7 @@ class InsightsScreen extends StatelessWidget {
                         height: 250,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                         child: Row(
@@ -119,12 +121,12 @@ class InsightsScreen extends StatelessWidget {
                   ),
                   
                 if (!expenses.hasExpensesThisMonth)
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.all(24.0),
                       child: Text(
                          'No expenses logged this month yet.',
-                         style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: colors.onSurfaceVariant),
                          textAlign: TextAlign.center,
                       ),
                     ),
@@ -219,8 +221,8 @@ class _MonthlyBarChart extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     monthName,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -359,9 +361,9 @@ class _CategoryLegend extends StatelessWidget {
               Expanded(
                 child: Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,

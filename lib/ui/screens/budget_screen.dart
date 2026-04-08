@@ -100,6 +100,8 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final settings = context.watch<SettingsViewModel>();
     final budgetVm = context.watch<BudgetViewModel>();
     final categoryVm = context.watch<CategoryViewModel>();
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -115,7 +117,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 child: Column(
@@ -123,9 +125,9 @@ class _BudgetScreenState extends State<BudgetScreen> {
                   children: [
                     const Text('Overall Monthly Limit', style: AppTextStyles.titleLarge),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'This dictates the main progress bar on your dashboard.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -161,13 +163,12 @@ class _BudgetScreenState extends State<BudgetScreen> {
               child: Text('Category Limits', style: AppTextStyles.headlineMedium),
             ),
           ),
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 4),
               child: Text(
                 'Optionally enforce stricter tracking on individual spending categories.',
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
+                style: TextStyle(color: colors.onSurfaceVariant),              ),
             ),
           ),
 
@@ -236,7 +237,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 child: LinearProgressIndicator(
                                   value: progress,
                                   minHeight: 6,
-                                  backgroundColor: AppColors.surfaceVariant,
+                                  backgroundColor: colors.surfaceContainerHighest,
                                   valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                                 ),
                               ),

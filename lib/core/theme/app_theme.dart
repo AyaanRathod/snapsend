@@ -13,13 +13,13 @@ abstract final class AppColors {
 
   // ── Brand / Accent ─────────────────────────────────────────────────────
   /// Vibrant electric blue — primary action color (buttons, FAB, progress).
-  static const Color primary = Color(0xFF2979FF);
+  static const Color primary = Color(0xFF43D7B5);
 
   /// Pressed / darker tint of primary.
-  static const Color primaryDark = Color(0xFF1565C0);
+  static const Color primaryDark = Color(0xFF1FA386);
 
   /// Very light blue — used as primary container backgrounds.
-  static const Color primaryContainer = Color(0xFFE3EDFF);
+  static const Color primaryContainer = Color(0xFFD9FFF5);
 
   // ── Backgrounds (Light Mode) ────────────────────────────────────────────
   /// Page/scaffold background — soft off-white, easy on the eyes.
@@ -74,13 +74,13 @@ abstract final class AppColors {
   static const Color cardShadow = Color(0x1A4B6097);
 
   // ── Dark Mode (STUB — teammates: replace Color(0xFF000000) values) ──────
-  static const Color darkBackground = Color(0xFF0F1117);
-  static const Color darkSurface = Color(0xFF1C1F2A);
-  static const Color darkSurfaceVariant = Color(0xFF252836);
-  static const Color darkTextPrimary = Color(0xFFF0F2FA);
-  static const Color darkTextSecondary = Color(0xFF8E92A4);
-  static const Color darkDivider = Color(0xFF2A2D3E);
-  static const Color darkPrimaryContainer = Color(0xFF193366);
+  static const Color darkBackground = Color(0xFF0A0D14);
+  static const Color darkSurface = Color(0xFF131A22);
+  static const Color darkSurfaceVariant = Color(0xFF1A2230);
+  static const Color darkTextPrimary = Color(0xFFF5F7FA);
+  static const Color darkTextSecondary = Color(0xFF98A2B3);
+  static const Color darkDivider = Color(0xFF263041);
+  static const Color darkPrimaryContainer = Color(0xFF163D38);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
