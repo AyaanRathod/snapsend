@@ -186,39 +186,62 @@ class ScannerViewModel extends ChangeNotifier {
 
   /// Attempts to extract the total amount from [text].
   ///
-  /// Strategy (in priority order):
-  ///   1. Look for "Total:" / "Amount:" / "Grand Total:" followed by digits.
-  ///   2. Look for the largest decimal number in the text as a fallback.
-  ///
-  /// Returns null if no reasonable amount is found.
+  /// Strategy:
+  ///   1. Strip timestamps (e.g. "19:44:27") so they are never parsed as dollars.
+  ///   2. Collect every TOTAL-style match (excluding SUBTOTAL via lookbehind).
+  ///   3. Return the LARGEST candidate — Grand Total >= Subtotal always.
+  ///   4. Last resort: largest decimal in text (capped at 9999 to skip barcodes).
   double? _parseAmount(String text) {
-    // Priority patterns — these look for labelled totals.
-    final labelledPatterns = [
+    // Strip timestamps like "19:44:27" or "06:29 AM" and long numeric serials.
+    final cleaned = text
+        .replaceAll(RegExp(r'\b\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?\b', caseSensitive: false), '')
+        .replaceAll(RegExp(r'\b\d{6,}\b'), '');
+
+    final candidates = <double>[];
+
+    void tryAdd(String? raw) {
+      if (raw == null) return;
+      final v = double.tryParse(raw.replaceAll(',', '.'));
+      if (v != null && v > 0 && v < 10000) candidates.add(v);
+    }
+
+    // Priority patterns — negative lookbehind (?<!SUB) stops SUBTOTAL matching.
+    final priorityPatterns = [
       RegExp(r'grand\s*total[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
-      RegExp(r'\btotal[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
-      RegExp(r'\bamount\s*due[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
-      RegExp(r'\bamount[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
-      RegExp(r'\bsubtotal[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'(?<!SUB)\bTOTAL\b[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'TOTAL\s+PURCHASE[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'VISA\s*TEND[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'AMOUNT\s+DUE[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'BALANCE\s+DUE[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
+      RegExp(r'\bAMOUNT[^\d]*(\d+[.,]\d{2})', caseSensitive: false),
     ];
 
-    for (final pattern in labelledPatterns) {
-      final match = pattern.firstMatch(text);
-      if (match != null) {
-        final raw = match.group(1)!.replaceAll(',', '.');
-        final parsed = double.tryParse(raw);
-        if (parsed != null && parsed > 0) return parsed;
+    for (final pattern in priorityPatterns) {
+      for (final match in pattern.allMatches(cleaned)) {
+        tryAdd(match.group(1));
       }
     }
 
-    // Fallback: find the largest decimal number anywhere in the text.
-    final numberPattern = RegExp(r'\b(\d{1,6}[.,]\d{2})\b');
-    final matches = numberPattern.allMatches(text);
+    // If we found any, return the LARGEST (Grand Total > Subtotal always).
+    if (candidates.isNotEmpty) {
+      candidates.sort((a, b) => b.compareTo(a));
+      return candidates.first;
+    }
+
+    // Subtotal-only fallback.
+    final subMatch = RegExp(r'\bsubtotal[^\d]*(\d+[.,]\d{2})', caseSensitive: false)
+        .firstMatch(cleaned);
+    if (subMatch != null) {
+      final v = double.tryParse(subMatch.group(1)!.replaceAll(',', '.'));
+      if (v != null && v > 0) return v;
+    }
+
+    // Last resort: largest reasonable decimal in the cleaned text.
     double? largest;
-    for (final match in matches) {
-      final raw = match.group(1)!.replaceAll(',', '.');
-      final value = double.tryParse(raw);
-      if (value != null && value > 0) {
-        if (largest == null || value > largest) largest = value;
+    for (final match in RegExp(r'\b(\d{1,4}[.,]\d{2})\b').allMatches(cleaned)) {
+      final v = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+      if (v != null && v > 0 && v < 10000) {
+        if (largest == null || v > largest) largest = v;
       }
     }
     return largest;

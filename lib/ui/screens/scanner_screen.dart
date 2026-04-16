@@ -15,16 +15,64 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
+  /// Guards against the callback firing multiple times during consecutive rebuilds.
+  bool _navigated = false;
   bool _hasStarted = false;
 
   @override
   void initState() {
     super.initState();
-    // Start scan automatically when this screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final vm = context.read<ScannerViewModel>();
       vm.startScan();
       setState(() => _hasStarted = true);
+    });
+  }
+
+  void _navigateToForm(ScannerViewModel vm) {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+
+    // Capture the values NOW before reset clears them.
+    final double? amount = vm.parsedAmount;
+    final String? imagePath = vm.scannedImagePath;
+    final bool noAmount = amount == null;
+
+    // Reset the VM first (safe now since we copied the values above).
+    vm.reset();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      if (noAmount) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No amount detected — please enter it manually.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ExpenseFormScreen(
+            initialAmount: amount,
+            receiptImagePath: imagePath,
+          ),
+        ),
+      );
+    });
+  }
+
+  void _navigateBack(ScannerViewModel vm) {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+    vm.reset();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
     });
   }
 
@@ -32,42 +80,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Widget build(BuildContext context) {
     return Consumer<ScannerViewModel>(
       builder: (context, vm, child) {
-        // State 1: Idle (meaning user cancelled the native intent)
+        // User cancelled the native scanner — go back to Dashboard.
         if (_hasStarted && vm.isIdle && !vm.isBusy) {
-          // If the user backed out of the native Android scanner,
-          // pop this screen as well to return to Dashboard.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            }
-          });
+          _navigateBack(vm);
           return const Scaffold(backgroundColor: Colors.black);
         }
 
-        // State 2: Done (scanning + OCR finished successfully)
+        // Scan + OCR finished — navigate to the expense form.
         if (vm.isDone) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (vm.parsedAmount == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('No amount detected. Please enter manually.')),
-              );
-            }
-            // Replace this intermediary screen with the parsed form.
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => ExpenseFormScreen(
-                  initialAmount: vm.parsedAmount,
-                  receiptImagePath: vm.scannedImagePath,
-                ),
-              ),
-            );
-            // Reset the ViewModel state so it's ready for the next scan.
-            vm.reset();
-          });
+          _navigateToForm(vm);
           return const Scaffold(backgroundColor: Colors.black);
         }
 
-        // State 3: Error
+        // Error state.
         if (vm.hasError) {
           return Scaffold(
             appBar: AppBar(title: const Text('Scan Failed')),
@@ -99,7 +124,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           );
         }
 
-        // State 4: Scanning or Processing
+        // Scanning / Processing loading state.
         return Scaffold(
           backgroundColor: Colors.black,
           body: Center(
@@ -109,7 +134,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 const CircularProgressIndicator(color: AppColors.primary),
                 const SizedBox(height: 32),
                 Text(
-                  vm.isScanning ? 'Waiting for camera...' : 'Extracting data via AI...',
+                  vm.isScanning
+                      ? 'Waiting for camera...'
+                      : 'Extracting data via AI...',
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],

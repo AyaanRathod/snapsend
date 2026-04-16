@@ -120,12 +120,18 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)), // allow slight future
+      lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: Theme.of(context).colorScheme.surface,
+              onSurface: Theme.of(context).colorScheme.onSurface,
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
             ),
           ),
           child: child!,
@@ -238,27 +244,27 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary),
+                      Icon(Icons.calendar_today_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Date', style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary)),
+                            Text('Date', style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                             const SizedBox(height: 4),
                             Text(
                               _formatFullDate(_selectedDate),
-                              style: AppTextStyles.bodyLarge,
+                              style: AppTextStyles.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onSurface),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
+                      Icon(Icons.edit_outlined, size: 16, color: AppColors.primary),
                     ],
                   ),
                 ),
