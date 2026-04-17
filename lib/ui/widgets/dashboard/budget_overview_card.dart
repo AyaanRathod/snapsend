@@ -5,10 +5,10 @@ import '../../../core/theme/app_theme.dart';
 import '../../../viewmodels/budget_viewmodel.dart';
 import '../../../viewmodels/expense_viewmodel.dart';
 import '../../../viewmodels/settings_viewmodel.dart';
-import '../../screens/budget_screen.dart';
+import '../../screens/budget_health_screen.dart';
 
 /// Main budget card on the Dashboard. Shows total spent vs monthly limit
-/// with a colour-coded progress bar. Tapping navigates to BudgetScreen.
+/// with a colour-coded progress bar. Tapping navigates to BudgetHealthScreen.
 class BudgetOverviewCard extends StatelessWidget {
   const BudgetOverviewCard({super.key});
 
@@ -18,7 +18,7 @@ class BudgetOverviewCard extends StatelessWidget {
       builder: (context, expenses, budget, _) {
         final settings = context.watch<SettingsViewModel>();
         final spent = expenses.totalThisMonth;
-        final limit = budget.totalBudgetLimit;
+        final limit = budget.effectiveTotalLimit; // Use effective limit (includes rollover)
         final hasLimit = limit > 0;
         final progress = budget.totalBudgetProgress;
 
@@ -36,7 +36,7 @@ class BudgetOverviewCard extends StatelessWidget {
           child: GestureDetector(
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const BudgetScreen()),
+              MaterialPageRoute(builder: (_) => const BudgetHealthScreen()),
             ),
             child: Container(
               padding: const EdgeInsets.all(24),
@@ -72,7 +72,7 @@ class BudgetOverviewCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                           child: Text(
-                            '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}% Used',
+                            '${(progress * 100).toStringAsFixed(0)}% Used',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,

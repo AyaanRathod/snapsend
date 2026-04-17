@@ -7,14 +7,17 @@ import 'core/theme/app_theme.dart';
 import 'data/models/budget_model.dart';
 import 'data/models/category_model.dart';
 import 'data/models/expense_model.dart';
+import 'data/models/income_model.dart';
 import 'data/repositories/budget_repository.dart';
 import 'data/repositories/category_repository.dart';
 import 'data/repositories/expense_repository.dart';
+import 'data/repositories/income_repository.dart';
 import 'data/repositories/settings_repository.dart';
 import 'data/services/hive_service.dart';
 import 'viewmodels/budget_viewmodel.dart';
 import 'viewmodels/category_viewmodel.dart';
 import 'viewmodels/expense_viewmodel.dart';
+import 'viewmodels/income_viewmodel.dart';
 import 'viewmodels/scanner_viewmodel.dart';
 import 'viewmodels/settings_viewmodel.dart';
 import 'ui/screens/splash_screen.dart';
@@ -28,6 +31,7 @@ void main() async {
   Hive.registerAdapter(CategoryModelAdapter()); // TypeId: 0
   Hive.registerAdapter(ExpenseModelAdapter());  // TypeId: 1
   Hive.registerAdapter(BudgetModelAdapter());   // TypeId: 2
+  Hive.registerAdapter(IncomeModelAdapter());    // TypeId: 3
 
   // Open all boxes via the HiveService utility.
   await HiveService.openBoxes();
@@ -42,6 +46,7 @@ void main() async {
   final expenseRepo = ExpenseRepository(hiveService);
   final categoryRepo = CategoryRepository(hiveService);
   final budgetRepo = BudgetRepository(hiveService, categoryRepo);
+  final incomeRepo = IncomeRepository(hiveService);
 
   // Seed default categories if this is the first launch.
   categoryRepo.ensureDefaults();
@@ -64,6 +69,9 @@ void main() async {
             budgetRepository: budgetRepo,
             expenseRepository: expenseRepo,
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => IncomeViewModel(repository: incomeRepo),
         ),
         ChangeNotifierProvider(
           create: (_) => ScannerViewModel(),

@@ -1,11 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/category_icons.dart';
 import '../../../viewmodels/category_viewmodel.dart';
 
-/// Interactive donut chart showing spending proportions per category
-/// for the current month. Tap a slice to see the dollar amount.
+/// Modern, clean donut chart with a central total display.
 class CategoryDonutChart extends StatefulWidget {
   final Map<String, double> spendingByCategory;
   final CategoryViewModel categoryVm;
@@ -35,8 +35,7 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
               style: TextStyle(color: cs.onSurfaceVariant)));
     }
 
-    final total =
-        widget.spendingByCategory.values.fold(0.0, (a, b) => a + b);
+    final total = widget.spendingByCategory.values.fold(0.0, (a, b) => a + b);
     final sorted = widget.spendingByCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -50,16 +49,11 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
       return PieChartSectionData(
         color: color,
         value: e.value,
-        title: isTouched
-            ? '${widget.currencySymbol}${e.value.toStringAsFixed(0)}'
-            : '${((e.value / total) * 100).toStringAsFixed(0)}%',
-        radius: isTouched ? 70 : 58,
-        titleStyle: TextStyle(
-          fontSize: isTouched ? 13 : 11,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          shadows: const [Shadow(blurRadius: 4, color: Colors.black38)],
-        ),
+        title: '', // Titles hidden for a cleaner look, info in legend/center
+        radius: isTouched ? 22 : 18,
+        showTitle: false,
+        badgeWidget: isTouched ? _Badge(color) : null,
+        badgePositionPercentageOffset: 1.1,
       );
     }).toList();
 
@@ -67,70 +61,100 @@ class _CategoryDonutChartState extends State<CategoryDonutChart> {
       children: [
         Expanded(
           flex: 5,
-          child: PieChart(
-            PieChartData(
-              pieTouchData: PieTouchData(
-                touchCallback: (evt, res) => setState(() {
-                  _touchedIndex =
-                      res?.touchedSection?.touchedSectionIndex;
-                }),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (evt, res) {
+                      setState(() {
+                        _touchedIndex = res?.touchedSection?.touchedSectionIndex;
+                      });
+                    },
+                  ),
+                  sectionsSpace: 4,
+                  centerSpaceRadius: 50,
+                  sections: sections,
+                ),
               ),
-              sectionsSpace: 3,
-              centerSpaceRadius: 40,
-              sections: sections,
-            ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'TOTAL',
+                    style: AppTextStyles.labelSmall.copyWith(color: cs.onSurfaceVariant, letterSpacing: 1),
+                  ),
+                  Text(
+                    '${widget.currencySymbol}${total.toStringAsFixed(0)}',
+                    style: AppTextStyles.headlineMedium.copyWith(color: cs.onSurface),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 24),
         Expanded(
           flex: 4,
-          child: ListView.builder(
-            itemCount: sorted.length,
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (ctx, i) {
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(sorted.length.clamp(0, 5), (i) {
               final e = sorted[i];
-              final iconString =
-                  widget.categoryVm.getIconStringForCategory(e.key);
+              final iconString = widget.categoryVm.getIconStringForCategory(e.key);
               final name = widget.categoryVm.getNameForCategory(e.key);
               final color = CategoryIcons.colorForKey(iconString);
               final pct = ((e.value / total) * 100).toStringAsFixed(0);
+
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   children: [
                     Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                            color: color, shape: BoxShape.circle)),
-                    const SizedBox(width: 8),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(name,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: cs.onSurface),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
-                          Text(
-                              '${widget.currencySymbol}${e.value.toStringAsFixed(2)} · $pct%',
-                              style: TextStyle(
-                                  fontSize: 10,
-                                  color: cs.onSurfaceVariant)),
-                        ],
+                      child: Text(
+                        name,
+                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                    ),
+                    Text(
+                      '$pct%',
+                      style: AppTextStyles.bodySmall.copyWith(color: cs.onSurfaceVariant),
                     ),
                   ],
                 ),
               );
-            },
+            }),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final Color color;
+  const _Badge(this.color);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 4, spreadRadius: 1),
+        ],
+      ),
     );
   }
 }

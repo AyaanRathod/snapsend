@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/common/snapspend_app_bar.dart';
 import '../widgets/dashboard/budget_overview_card.dart';
 import '../widgets/dashboard/burn_rate_card.dart';
 import '../widgets/dashboard/dashboard_header.dart';
@@ -12,7 +13,6 @@ import 'scanner_screen.dart';
 import 'settings_screen.dart';
 
 /// Root scaffold with BottomAppBar navigation and a central FAB.
-/// Tab content lives in dedicated widget/screen files.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -20,20 +20,82 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+class _DashboardTab extends StatelessWidget {
+  const _DashboardTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          const SliverToBoxAdapter(child: DashboardHeader()),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: BudgetOverviewCard()),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          const SliverToBoxAdapter(child: BurnRateCard()),
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // "Recent Expenses" sticky header
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: SliverFixedHeaderDelegate(
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                alignment: Alignment.centerLeft,
+                child: const Text(
+                  'Recent Expenses',
+                  style: AppTextStyles.headlineMedium,
+                ),
+              ),
+            ),
+          ),
+
+          const RecentExpensesList(),
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
+      ),
+    );
+  }
+}
+
 class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _tabs = const [
-    _DashboardTab(),
-    BudgetScreen(),
-    InsightsScreen(),
-    SettingsScreen(),
-  ];
+  String get _currentTitle {
+    switch (_currentIndex) {
+      case 0:
+        return 'SnapSpend';
+      case 1:
+        return 'Budgets';
+      case 2:
+        return 'Insights';
+      case 3:
+        return 'Settings';
+      default:
+        return 'SnapSpend';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _tabs),
+      appBar: SnapSpendAppBar(
+        title: _currentTitle,
+        onLogoPressed: () => setState(() => _currentIndex = 0),
+        onProfilePressed: () => setState(() => _currentIndex = 3),
+      ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          _DashboardTab(),
+          BudgetScreen(),
+          InsightsScreen(),
+          SettingsScreen(),
+        ],
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: GestureDetector(
         onLongPress: () => Navigator.push(
@@ -76,44 +138,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
 }
 
-/// The home tab — header, budget card, burn rate, recent list.
-class _DashboardTab extends StatelessWidget {
-  const _DashboardTab();
+class SliverFixedHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  SliverFixedHeaderDelegate({required this.child});
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          const SliverToBoxAdapter(child: DashboardHeader()),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          const SliverToBoxAdapter(child: BudgetOverviewCard()),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          const SliverToBoxAdapter(child: BurnRateCard()),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+  double get minExtent => 48;
+  @override
+  double get maxExtent => 48;
 
-          // "Recent Expenses" sticky header
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: SliverFixedHeaderDelegate(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                alignment: Alignment.centerLeft,
-                child: const Text(
-                  'Recent Expenses',
-                  style: AppTextStyles.headlineMedium,
-                ),
-              ),
-            ),
-          ),
-
-          const RecentExpensesList(),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
-        ],
-      ),
-    );
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
   }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
 }

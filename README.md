@@ -1,69 +1,75 @@
 # SnapSpend 📸💲
 
-SnapSpend is an offline-first, AI-powered personal expense tracker built with Flutter. It utilizes on-device Machine Learning (Google ML Kit) to automatically scan, crop, and extra totals from physical receipts without ever requiring a cloud connection.
+SnapSpend is an offline-first, AI-powered personal finance & budgeting app built with Flutter. It utilizes on-device Machine Learning (Google ML Kit) to automatically scan physical receipts and provides a comprehensive suite of tools to manage your income, budgets, and spending health.
 
+![App Screenshot](image.png)
+![App Dashboard](image-1.png)
 
-  ![alt text](image.png)
-  ![alt text](image-1.png)
+## Core Features ✨
 
-## Features ✨
-
-* **AI Receipt Scanning:** Just snap a picture of your physical receipt. Google ML Kit natively crops the image and extracts the grand total automatically using the Latin text-recognizer engine.
-* **Offline-First Storage:** Driven entirely natively via [Hive](https://pub.dev/packages/hive), an incredibly fast NoSQL local database. No user accounts, APIs, or internet required!
-* **Categorized Budgeting:** Dynamically assign limits to Custom Categories and track monthly caps across the dashboard universally.
-* **Insight Analytics:** Visualize 6-Month historical tracking and current-month categorized breakdowns via embedded `fl_chart` projections.
-* **Universal Localization:** Customizable currency parameter settings and User Profiles that instantly cascade via `Provider`.
+* **AI Receipt Scanning:** Just snap a picture of your physical receipt. Google ML Kit natively crops the image and extracts the grand total automatically using a local OCR pipeline.
+* **Full Income Tracking:** Log your salary, freelance earnings, or bonuses. The app provides a live "Cash Flow" balance (Income vs. Expenses) so you always know your true net worth.
+* **Smart Budget Rollover:** unspent money from last month doesn't just disappear—SnapSpend automatically rolls it over to increase your available budget for the current month.
+* **Budget Health Reports:** Get actionable advice when you're over-budget. The app identifies "Culprit Categories" and calculates a daily allowance to help you stay on track.
+* **Offline-First Privacy:** All data is stored locally via [Hive](https://pub.dev/packages/hive). No cloud, no account creation, and no data tracking. Your finances stay on your phone.
+* **Premium Analytics:** Visualize your financial journey with smooth Area Charts for trends and clean Donut Charts for category breakdowns.
 
 ## Tech Stack 🛠️
 
 * **Framework:** [Flutter](https://flutter.dev/) (Dart)
-* **State Management:** MVVM using [Provider](https://pub.dev/packages/provider)
-* **Local Database:** [Hive](https://pub.dev/packages/hive) & `hive_flutter`
+* **State Management:** MVVM Architecture using [Provider](https://pub.dev/packages/provider)
+* **Local Database:** [Hive](https://pub.dev/packages/hive) (NoSQL) for high-performance persistence.
 * **Machine Learning:** 
   * `google_mlkit_document_scanner` (Native edge-detection & cropping)
-  * `google_mlkit_text_recognition` (OCR pipeline parsing totals and taxes)
-* **Data Visualization:** `fl_chart`
+  * `google_mlkit_text_recognition` (OCR engine for total extraction)
+* **Data Visualization:** `fl_chart` for responsive, interactive graphs.
 
 ## Getting Started 🚀
 
 ### Prerequisites
 * Flutter SDK (3.20.0 or higher)
-* **Android Physical Device (Camera Requirement):** Google ML Kit document scanner strictly requires a physical Android device to mount the camera intent. *It will crash on Android Emulators.*
+* **Android Physical Device:** Required for the Receipt Scanner. *Emulators do not support the native ML Kit camera intent.*
 
-### Installation runbook
+### Installation & Local Setup
 
-1. Clone this repository:
+1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/snapsend.git
-   cd SnapSend
+   git clone https://github.com/YOUR_USERNAME/snapsend.git
+   cd snapsend
    ```
 
-2. Fetch all dependencies:
+2. **Fetch dependencies:**
    ```bash
    flutter pub get
    ```
 
-3. Generate Hive serialization models (Run whenever you modify models!):
+3. **Generate Database Adapters:**
+   Since SnapSpend uses Hive for local storage, you **must** generate the serialization code before the app will run:
    ```bash
    dart run build_runner build --delete-conflicting-outputs
    ```
 
-4. Connect your physical Android Device via USB debugging and run:
+4. **Run the app:**
+   Connect your physical device and run:
    ```bash
    flutter run
    ```
 
+## Development & Pushing Changes 🤝
+
+When contributing to this project or pushing your own updates:
+
+1. **Keep it clean:** Always run the `build_runner` command after modifying any models (`.dart` files in `lib/data/models`).
+2. **Platform Config:** Ensure `CAMERA` permissions are maintained in `AndroidManifest.xml` for scanning.
+3. **Commit often:** Use descriptive messages like `git commit -m "Added rollover logic"`.
+
 ## Creating a Production Build 📦
 
-Because we implement native Google ML Kit dependencies, you must apply R8 minifier configuration rules before building a release version. We have already injected `-dontwarn com.google.mlkit.vision.text.**` inside `android/app/proguard-rules.pro`. 
-
-To generate a deployable release APK:
+To generate a signed release APK:
 
 ```bash
 flutter build apk --release
 ```
 
-You will find the generated universal APK inside:  
+The APK will be located at:  
 `build/app/outputs/flutter-apk/app-release.apk`
-
-

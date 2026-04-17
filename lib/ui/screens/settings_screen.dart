@@ -166,7 +166,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       _buildSectionTitle('App Configuration'),
                       Card(
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),

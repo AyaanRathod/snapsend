@@ -103,11 +103,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Budgets'),
-      ),
-      body: CustomScrollView(
+    // We wrap in a Material widget to provide the necessary context for TextFields
+    // and prevent the "No Material widget found" error.
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
           // Total Budget Form
@@ -180,11 +180,11 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 (context, index) {
                   final category = categoryVm.categories[index];
                   final summary = budgetVm.getSummaryForCategory(category.id);
-                  
+
                   final hasLimit = summary != null && summary.limit > 0;
                   final spent = summary?.spent ?? 0;
                   final limit = summary?.limit ?? 0;
-                  
+
                   // Compute bar usage
                   final progress = hasLimit ? (spent / limit).clamp(0.0, 1.0) : 0.0;
                   Color progressColor = AppColors.primary;
@@ -213,6 +213,7 @@ class _BudgetScreenState extends State<BudgetScreen> {
                                 CircleAvatar(
                                   backgroundColor: color.withValues(alpha: 0.1),
                                   child: Icon(iconData, color: color, size: 20),
+                                  radius: 18,
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(

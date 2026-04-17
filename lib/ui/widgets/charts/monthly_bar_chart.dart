@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/chart_data.dart';
 
-/// 6-month bar chart for the Insights screen.
+/// Modern 6-month area/line chart for the Insights screen.
 class MonthlyBarChart extends StatelessWidget {
   final List<MonthlyTotal> monthlyData;
   final String currencySymbol;
@@ -22,117 +22,111 @@ class MonthlyBarChart extends StatelessWidget {
 
     if (monthlyData.isEmpty) {
       return Center(
-          child:
-              Text('No data yet', style: TextStyle(color: labelColor)));
+          child: Text('No data yet', style: TextStyle(color: labelColor)));
     }
 
     double maxY = 0;
     for (final d in monthlyData) {
       if (d.total > maxY) maxY = d.total;
     }
-    maxY = maxY == 0 ? 100 : maxY * 1.4;
+    // Give some headroom
+    maxY = maxY == 0 ? 100 : maxY * 1.3;
 
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
 
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        maxY: maxY,
-        minY: 0,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => cs.inverseSurface,
-            getTooltipItem: (grp, grpIdx, rod, rodIdx) => BarTooltipItem(
-              '$currencySymbol${rod.toY.toStringAsFixed(2)}',
-              TextStyle(
-                  color: cs.onInverseSurface, fontWeight: FontWeight.bold),
-            ),
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: maxY / 4,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: cs.outlineVariant.withValues(alpha: 0.2),
+            strokeWidth: 1,
           ),
         ),
         titlesData: FlTitlesData(
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, _) {
-                final i = value.toInt();
-                if (i < 0 || i >= monthlyData.length) return const SizedBox();
-                final d = monthlyData[i];
-                if (d.total == 0) return const SizedBox();
-                return Text(
-                  '$currencySymbol${d.total.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold),
-                );
-              },
-            ),
-          ),
+          show: true,
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              getTitlesWidget: (value, _) {
-                final i = value.toInt();
-                if (i < 0 || i >= monthlyData.length) return const SizedBox();
+              reservedSize: 30,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index < 0 || index >= monthlyData.length) return const SizedBox();
                 return Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    months[monthlyData[i].month.month - 1],
-                    style: TextStyle(
-                        color: labelColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500),
+                    months[monthlyData[index].month.month - 1],
+                    style: TextStyle(color: labelColor, fontSize: 11, fontWeight: FontWeight.w500),
                   ),
                 );
               },
             ),
           ),
         ),
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(
-            color: cs.outlineVariant.withValues(alpha: 0.4),
-            strokeWidth: 1,
+        borderData: FlBorderData(show: false),
+        minX: 0,
+        maxX: (monthlyData.length - 1).toDouble(),
+        minY: 0,
+        maxY: maxY,
+        lineTouchData: LineTouchData(
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (_) => AppColors.primary,
+            getTooltipItems: (touchedSpots) {
+              return touchedSpots.map((spot) {
+                return LineTooltipItem(
+                  '$currencySymbol${spot.y.toStringAsFixed(0)}',
+                  const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                );
+              }).toList();
+            },
           ),
         ),
-        borderData: FlBorderData(show: false),
-        barGroups: List.generate(monthlyData.length, (i) {
-          final d = monthlyData[i];
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: d.total,
-                width: 24,
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppColors.primary.withValues(alpha: 0.7),
-                    AppColors.primary,
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(6),
-                  topRight: Radius.circular(6),
-                ),
-                backDrawRodData: BackgroundBarChartRodData(
-                  show: true,
-                  toY: maxY,
-                  color: cs.surfaceContainerHighest,
-                ),
+        lineBarsData: [
+          LineChartBarData(
+            spots: List.generate(monthlyData.length, (i) {
+              return FlSpot(i.toDouble(), monthlyData[i].total);
+            }),
+            isCurved: true,
+            preventCurveOverShooting: true,
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withValues(alpha: 0.5),
+              ],
+            ),
+            barWidth: 4,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                radius: 4,
+                color: Colors.white,
+                strokeWidth: 3,
+                strokeColor: AppColors.primary,
               ),
-            ],
-          );
-        }),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.3),
+                  AppColors.primary.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

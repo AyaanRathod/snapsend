@@ -13,8 +13,6 @@ import '../widgets/charts/budget_bars_chart.dart';
 import '../widgets/charts/category_radar_chart.dart';
 import '../../viewmodels/category_viewmodel.dart';
 
-/// Displays 5 analytics charts: 6-month trend, weekly line,
-/// category donut, budget bars, and category radar.
 class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
 
@@ -50,22 +48,17 @@ class InsightsScreen extends StatelessWidget {
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 32, 24, 8),
-                sliver: SliverToBoxAdapter(
-                  child:
-                      Text('Insights', style: AppTextStyles.headlineLarge),
-                ),
-              ),
-
               // Summary chips
-              SliverToBoxAdapter(
-                child: InsightsSummaryRow(
-                  totalThisMonth: expenses.totalThisMonth,
-                  totalAllTime:
-                      expenses.expenses.fold(0.0, (s, e) => s + e.amount),
-                  currencySymbol: sym,
-                  expenseCount: expenses.expenses.length,
+              SliverPadding(
+                padding: const EdgeInsets.only(top: 16),
+                sliver: SliverToBoxAdapter(
+                  child: InsightsSummaryRow(
+                    totalThisMonth: expenses.totalThisMonth,
+                    totalAllTime:
+                        expenses.expenses.fold(0.0, (s, e) => s + e.amount),
+                    currencySymbol: sym,
+                    expenseCount: expenses.expenses.length,
+                  ),
                 ),
               ),
 
