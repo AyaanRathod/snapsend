@@ -2,8 +2,8 @@
 
 SnapSpend is an offline-first, AI-powered personal finance & budgeting app built with Flutter. It utilizes on-device Machine Learning (Google ML Kit) to automatically scan physical receipts and provides a comprehensive suite of tools to manage your income, budgets, and spending health.
 
-![App Screenshot](image.png)
-![App Dashboard](image-1.png)
+![App Screenshot](s2.png)
+![App Dashboard](s1.png)
 
 ## Core Features ✨
 
