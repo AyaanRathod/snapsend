@@ -14,11 +14,13 @@ class BudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ExpenseViewModel, BudgetViewModel>(
-      builder: (context, expenses, budget, _) {
-        final settings = context.watch<SettingsViewModel>();
+    // Upgraded to Consumer3 for better performance and consistency
+    return Consumer3<ExpenseViewModel, BudgetViewModel, SettingsViewModel>(
+      builder: (context, expenses, budget, settings, _) {
         final spent = expenses.totalThisMonth;
-        final limit = budget.effectiveTotalLimit; // Use effective limit (includes rollover)
+        final limit = budget.totalBudgetLimit;
+        final savings = budget.savingsFromLastMonth;
+
         final hasLimit = limit > 0;
         final progress = budget.totalBudgetProgress;
 
@@ -68,11 +70,12 @@ class BudgetOverviewCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            // Changed to withOpacity for universal compatibility
+                            color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(AppRadius.xs),
                           ),
                           child: Text(
-                            '${(progress * 100).toStringAsFixed(0)}% Used',
+                            '${(progress * 100).clamp(0, 999).toStringAsFixed(0)}% Used',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -104,14 +107,34 @@ class BudgetOverviewCard extends StatelessWidget {
                       ],
                     ],
                   ),
+                  if (savings > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: AppColors.warning, size: 16),
+                        const SizedBox(width: 6),
+                        // Added Expanded to prevent overflow on small screens
+                        Expanded(
+                          child: Text(
+                            'You saved ${settings.formatAmount(savings)} last month!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   if (hasLimit) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                       child: LinearProgressIndicator(
                         value: progress.clamp(0.0, 1.0),
                         minHeight: 8,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        backgroundColor: Colors.white.withOpacity(0.2),
                         valueColor: AlwaysStoppedAnimation<Color>(statusColor),
                       ),
                     ),

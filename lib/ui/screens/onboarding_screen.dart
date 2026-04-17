@@ -7,9 +7,6 @@ import '../../viewmodels/budget_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 import 'dashboard_screen.dart';
 
-/// The 3-page Onboarding Flow shown on first launch.
-/// 
-/// Collects user name, preferred currency, and an optional initial monthly budget.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -21,7 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
-  // Form states and controllers
   final _nameController = TextEditingController();
   final _currencyController = TextEditingController(text: '\$');
   final _budgetController = TextEditingController();
@@ -38,16 +34,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage == 1) {
-      if (!(_formKey.currentState?.validate() ?? false)) {
-        return; // Don't proceed if name/currency form is invalid
-      }
+      if (!(_formKey.currentState?.validate() ?? false)) return;
     }
-
     if (_currentPage < 2) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
     } else {
       _finishOnboarding();
     }
@@ -56,90 +46,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finishOnboarding() async {
     final settingsVm = context.read<SettingsViewModel>();
     final budgetVm = context.read<BudgetViewModel>();
-
-    // 1. If an initial budget was provided, set it up.
     final budgetText = _budgetController.text.trim();
     if (budgetText.isNotEmpty) {
       final parsed = double.tryParse(budgetText);
-      if (parsed != null && parsed > 0) {
-        budgetVm.setTotalBudget(parsed);
-      }
+      if (parsed != null && parsed > 0) budgetVm.setTotalBudget(parsed);
     }
-
-    // 2. Complete onboarding and save settings.
     await settingsVm.completeOnboarding(
       name: _nameController.text.trim(),
       currencySymbol: _currencyController.text.trim(),
     );
-
-    // 3. Navigate to Dashboard!
     if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      );
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const DashboardScreen()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            // Page Indicator & Skip button header
+            // Header (Dots and Skip)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Indicators
-                  Row(
-                    children: List.generate(3, (index) => _buildIndicator(index)),
-                  ),
+                  Row(children: List.generate(3, (index) => _buildIndicator(index))),
                   if (_currentPage < 2)
                     TextButton(
-                      onPressed: () {
-                        _pageController.animateToPage(
-                          2, // Skip to last page
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
-                        );
-                      },
+                      onPressed: () => _pageController.animateToPage(2, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
                       child: const Text('Skip'),
-                    )
-                  else
-                    const SizedBox(height: 48), // Spacer to balance header
-                ],
-              ),
-            ),
-            
-            // The Scrollable Pages
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                physics: const BouncingScrollPhysics(),
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
-                children: [
-                  _buildWelcomePage(),
-                  _buildProfilePage(),
-                  _buildBudgetPage(),
+                    ),
                 ],
               ),
             ),
 
-            // Bottom Navigation Action
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _nextPage,
-                  child: Text(
-                    _currentPage == 2 ? 'Get Started' : 'Continue',
-                  ),
-                ),
+            // Content Area (PageView)
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: const BouncingScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                children: [
+                  _buildWelcomePage(isLandscape),
+                  _buildProfilePage(isLandscape),
+                  _buildBudgetPage(isLandscape),
+                ],
               ),
             ),
           ],
@@ -152,168 +107,124 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.only(right: 8),
-      height: 8,
-      width: _currentPage == index ? 24 : 8,
+      height: 6,
+      width: _currentPage == index ? 20 : 6,
       decoration: BoxDecoration(
-        color: _currentPage == index 
-            ? AppColors.primary 
-            : AppColors.textDisabled.withValues(alpha: 0.5),
+        color: _currentPage == index ? AppColors.primary : AppColors.textDisabled.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
     );
   }
 
-  Widget _buildWelcomePage() {
-    return Padding(
+  Widget _buildWelcomePage(bool isLandscape) {
+    return ListView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppColors.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.auto_awesome,
-              size: 64,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(height: 40),
-          const Text(
-            'Smart Expense Tracking',
-            style: AppTextStyles.headlineLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Keep an eye on your spending effortlessly with AI-powered receipt scanning.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 16, height: 1.5), // Manually merged bodyLarge properties
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfilePage() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
           children: [
-            const SizedBox(height: 40),
-            const Text(
-              'Make it yours',
-              style: AppTextStyles.headlineLarge,
+            Container(
+              padding: EdgeInsets.all(isLandscape ? 12 : 24),
+              decoration: const BoxDecoration(color: AppColors.primaryContainer, shape: BoxShape.circle),
+              child: Icon(Icons.auto_awesome, size: isLandscape ? 32 : 64, color: AppColors.primary),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'How should we address you?',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 16, height: 1.5),
-            ),
-            const SizedBox(height: 40),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'First Name',
-                hintText: 'e.g. Alex',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
-              textCapitalization: TextCapitalization.words,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter your name';
-                }
-                return null;
-              },
-            ),
+            SizedBox(height: isLandscape ? 16 : 40),
+            const Text('Smart Expense Tracking', style: AppTextStyles.headlineLarge, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             const Text(
-              'This symbol will be used everywhere. We support major formats:',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              'Keep an eye on your spending effortlessly with AI-powered receipt scanning.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16, height: 1.5),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            // Replace TextField with DropdownButtonFormField
-            DropdownButtonFormField<String>(
-              initialValue: _currencyController.text.isNotEmpty && ['\$', 'US\$', 'C\$', '€', '£', '¥', '₹', 'A\$'].contains(_currencyController.text) 
-                  ? _currencyController.text 
-                  : '\$',
-              decoration: const InputDecoration(
-                labelText: 'Currency',
-                hintText: 'Select your currency',
-                prefixIcon: Icon(Icons.payments_outlined),
-              ),
-              items: const [
-                DropdownMenuItem(value: '\$', child: Text('\$ (Generic)')),
-                DropdownMenuItem(value: 'US\$', child: Text('US\$ (USD)')),
-                DropdownMenuItem(value: 'C\$', child: Text('C\$ (CAD)')),
-                DropdownMenuItem(value: 'A\$', child: Text('A\$ (AUD)')),
-                DropdownMenuItem(value: '€', child: Text('€ (EUR)')),
-                DropdownMenuItem(value: '£', child: Text('£ (GBP)')),
-                DropdownMenuItem(value: '¥', child: Text('¥ (JPY)')),
-                DropdownMenuItem(value: '₹', child: Text('₹ (INR)')),
-              ],
-              onChanged: (val) {
-                if (val != null) setState(() => _currencyController.text = val);
-              },
-            ),
+            const SizedBox(height: 40),
+            _buildContinueButton(),
           ],
         ),
-      ),
+      ],
     );
   }
 
-  Widget _buildBudgetPage() {
-    return SingleChildScrollView(
+  Widget _buildProfilePage(bool isLandscape) {
+    return ListView(
+      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(32.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          const Text(
-            'Set your goals',
-            style: AppTextStyles.headlineLarge,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Want to keep your spending in check? Set a monthly budget to track your progress.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 16, height: 1.5),
-          ),
-          const SizedBox(height: 40),
-          TextField(
-            controller: _budgetController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
-            ],
-            decoration: InputDecoration(
-              labelText: 'Monthly Budget (Optional)',
-              hintText: 'e.g. 500',
-              prefixText: '${_currencyController.text.trim()} ',
-              prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Row(
+      children: [
+        Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'You can always skip this and set a budget later in Settings.',
-                  style: AppTextStyles.bodySmall,
-                ),
+              const Text('Make it yours', style: AppTextStyles.headlineLarge),
+              const SizedBox(height: 8),
+              const Text('How should we address you?', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+              SizedBox(height: isLandscape ? 20 : 32),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'First Name', hintText: 'e.g. Alex', prefixIcon: Icon(Icons.person_outline)),
+                textCapitalization: TextCapitalization.words,
+                validator: (value) => (value == null || value.trim().isEmpty) ? 'Please enter your name' : null,
               ),
+              const SizedBox(height: 20),
+              DropdownButtonFormField<String>(
+                initialValue: _currencyController.text.isNotEmpty && ['\$', 'US\$', 'C\$', '€', '£', '¥', '₹', 'A\$'].contains(_currencyController.text) ? _currencyController.text : '\$',
+                decoration: const InputDecoration(labelText: 'Currency', prefixIcon: Icon(Icons.payments_outlined)),
+                items: const [
+                  DropdownMenuItem(value: '\$', child: Text('\$ (Generic)')),
+                  DropdownMenuItem(value: 'US\$', child: Text('US\$ (USD)')),
+                  DropdownMenuItem(value: 'C\$', child: Text('C\$ (CAD)')),
+                  DropdownMenuItem(value: 'A\$', child: Text('A\$ (AUD)')),
+                  DropdownMenuItem(value: '€', child: Text('€ (EUR)')),
+                  DropdownMenuItem(value: '£', child: Text('£ (GBP)')),
+                  DropdownMenuItem(value: '¥', child: Text('¥ (JPY)')),
+                  DropdownMenuItem(value: '₹', child: Text('₹ (INR)')),
+                ],
+                onChanged: (val) { if (val != null) setState(() => _currencyController.text = val); },
+              ),
+              const SizedBox(height: 40),
+              _buildContinueButton(),
             ],
-          )
-        ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBudgetPage(bool isLandscape) {
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(32.0),
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Set your goals', style: AppTextStyles.headlineLarge),
+            const SizedBox(height: 8),
+            const Text('Want to keep your spending in check? Set a monthly budget to track your progress.', style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+            SizedBox(height: isLandscape ? 20 : 32),
+            TextField(
+              controller: _budgetController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*'))],
+              decoration: InputDecoration(
+                labelText: 'Monthly Budget (Optional)',
+                prefixText: '${_currencyController.text.trim()} ',
+                prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+              ),
+            ),
+            const SizedBox(height: 40),
+            _buildContinueButton(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContinueButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _nextPage,
+        child: Text(_currentPage == 2 ? 'Get Started' : 'Continue'),
       ),
     );
   }

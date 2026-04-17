@@ -5,13 +5,15 @@ import '../../core/theme/app_theme.dart';
 import '../../viewmodels/expense_viewmodel.dart';
 import '../../viewmodels/settings_viewmodel.dart';
 import '../../viewmodels/budget_viewmodel.dart';
+import '../../viewmodels/income_viewmodel.dart';
 import '../widgets/charts/chart_card.dart';
 import '../widgets/charts/monthly_bar_chart.dart';
 import '../widgets/charts/week_line_chart.dart';
 import '../widgets/charts/category_donut_chart.dart';
-import '../widgets/charts/budget_bars_chart.dart';
 import '../widgets/charts/category_radar_chart.dart';
+import '../widgets/charts/income_vs_expense_chart.dart';
 import '../../viewmodels/category_viewmodel.dart';
+import '../widgets/common/snapspend_app_bar.dart';
 
 class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
@@ -21,9 +23,9 @@ class InsightsScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return SafeArea(
-      child: Consumer4<ExpenseViewModel, CategoryViewModel, SettingsViewModel,
-          BudgetViewModel>(
-        builder: (context, expenses, categories, settings, budgets, _) {
+      child: Consumer5<ExpenseViewModel, CategoryViewModel, SettingsViewModel,
+          BudgetViewModel, IncomeViewModel>(
+        builder: (context, expenses, categories, settings, budgets, income, _) {
           final sym = settings.currencySymbol;
 
           if (!expenses.hasExpenses) {
@@ -33,7 +35,7 @@ class InsightsScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.bar_chart_outlined,
                       size: 72,
-                      color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
+                      color: cs.onSurfaceVariant.withOpacity(0.4)),
                   const SizedBox(height: 16),
                   Text(
                     'Add your first expense\nto see insights here!',
@@ -62,18 +64,33 @@ class InsightsScreen extends StatelessWidget {
                 ),
               ),
 
-              _header(context, '6-Month Spending'),
+              _header(context, 'Monthly Cash Flow (Income vs Spending)'),
               SliverToBoxAdapter(
                 child: ChartCard(
-                  height: 230,
-                  child: MonthlyBarChart(
-                    monthlyData: expenses.lastSixMonths,
+                  height: 220,
+                  child: IncomeVsExpenseChart(
+                    totalIncome: income.totalIncomeThisMonth,
+                    totalExpense: expenses.totalThisMonth,
                     currencySymbol: sym,
                   ),
                 ),
               ),
 
-              _header(context, 'This Week'),
+              if (budgets.hasCategoryBudgets && budgets.budgetSummaries.length >= 3) ...[
+                _header(context, 'Budget Discipline (Category Balance)'),
+                SliverToBoxAdapter(
+                  child: ChartCard(
+                    height: 320,
+                    child: CategoryRadarChart(
+                      summaries: budgets.budgetSummaries,
+                      totalIncome: income.totalIncomeThisMonth,
+                      currencySymbol: sym,
+                    ),
+                  ),
+                ),
+              ],
+
+              _header(context, 'Weekly Activity'),
               SliverToBoxAdapter(
                 child: ChartCard(
                   height: 200,
@@ -84,8 +101,19 @@ class InsightsScreen extends StatelessWidget {
                 ),
               ),
 
-              if (expenses.hasExpensesThisMonth) ...[
-                _header(context, 'Spending by Category'),
+              _header(context, 'Spending Trend (6-Months)'),
+              SliverToBoxAdapter(
+                child: ChartCard(
+                  height: 230,
+                  child: MonthlyBarChart(
+                    monthlyData: expenses.lastSixMonths,
+                    currencySymbol: sym,
+                  ),
+                ),
+              ),
+
+              _header(context, 'Spending Breakdown (Categories)'),
+              if (expenses.hasExpensesThisMonth)
                 SliverToBoxAdapter(
                   child: ChartCard(
                     height: 280,
@@ -96,34 +124,6 @@ class InsightsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
-
-              if (budgets.hasCategoryBudgets) ...[
-                _header(context, 'Budget vs Actual'),
-                SliverToBoxAdapter(
-                  child: ChartCard(
-                    height: (budgets.budgetSummaries.length * 66.0)
-                        .clamp(120, 400),
-                    child: BudgetBarsChart(
-                      summaries: budgets.budgetSummaries,
-                      currencySymbol: sym,
-                    ),
-                  ),
-                ),
-
-                if (budgets.budgetSummaries.length >= 3) ...[
-                  _header(context, 'Category Budget Radar'),
-                  SliverToBoxAdapter(
-                    child: ChartCard(
-                      height: 300,
-                      child: CategoryRadarChart(
-                        summaries: budgets.budgetSummaries,
-                        currencySymbol: sym,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
 
               const SliverToBoxAdapter(child: SizedBox(height: 48)),
             ],

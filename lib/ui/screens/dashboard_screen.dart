@@ -12,7 +12,6 @@ import 'insights_screen.dart';
 import 'scanner_screen.dart';
 import 'settings_screen.dart';
 
-/// Root scaffold with BottomAppBar navigation and a central FAB.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -25,6 +24,8 @@ class _DashboardTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SafeArea(
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -36,25 +37,29 @@ class _DashboardTab extends StatelessWidget {
           const SliverToBoxAdapter(child: BurnRateCard()),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // "Recent Expenses" sticky header
+          // "Recent Expenses" sticky header - Polished Font & Padding
           SliverPersistentHeader(
             pinned: true,
             delegate: SliverFixedHeaderDelegate(
               child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                color: theme.scaffoldBackgroundColor,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 alignment: Alignment.centerLeft,
-                child: const Text(
+                child: Text(
                   'Recent Expenses',
-                  style: AppTextStyles.headlineMedium,
+                  style: AppTextStyles.titleLarge.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
             ),
           ),
 
           const RecentExpensesList(),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          // Optimized bottom padding for FAB notch
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -143,9 +148,9 @@ class SliverFixedHeaderDelegate extends SliverPersistentHeaderDelegate {
   SliverFixedHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 48;
+  double get minExtent => 52;
   @override
-  double get maxExtent => 48;
+  double get maxExtent => 52;
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {

@@ -7,15 +7,16 @@ import '../data/repositories/expense_repository.dart';
 /// Manages all budget state — both the overall monthly cap and
 /// per-category limits.
 ///
-/// Includes "Rollover" logic: leftover budget from the previous month
-/// is added to the current month's available funds.
+/// SAVINGS LOGIC:
+/// Instead of rolling over unspent money into "extra spending limit,"
+/// we track it as "Savings achieved from last month."
 class BudgetViewModel extends ChangeNotifier {
   final BudgetRepository _budgetRepo;
   final ExpenseRepository _expenseRepo;
 
   BudgetModel? _totalBudget;
   double _totalSpentThisMonth = 0;
-  double _rolloverFromLastMonth = 0;
+  double _savingsFromLastMonth = 0;
   List<CategoryBudgetSummary> _summaries = [];
   String? _errorMessage;
 
@@ -34,31 +35,27 @@ class BudgetViewModel extends ChangeNotifier {
   /// The user's overall monthly budget record, or null if not set yet.
   BudgetModel? get totalBudget => _totalBudget;
 
-  /// The monthly spending cap as a plain double (0 if none set).
+  /// The monthly spending cap (Fixed - doesn't change based on savings).
   double get totalBudgetLimit => _totalBudget?.monthlyLimit ?? 0;
 
-  /// Total amount spent in the current calendar month (across all categories).
+  /// Total amount spent in the current calendar month.
   double get totalSpentThisMonth => _totalSpentThisMonth;
 
-  /// Leftover amount from the previous month (Total Limit - Total Spent).
-  double get rolloverFromLastMonth => _rolloverFromLastMonth;
+  /// Unspent budget from the previous month.
+  double get savingsFromLastMonth => _savingsFromLastMonth;
 
-  /// The "Effective" budget for this month: Base Limit + Rollover.
-  double get effectiveTotalLimit => totalBudgetLimit + _rolloverFromLastMonth;
-
-  /// 0.0 → 1.0+ budget utilisation.  Can exceed 1.0 when over-budget.
-  /// Now accounts for rollover.
+  /// 0.0 → 1.0+ budget utilisation.
   double get totalBudgetProgress {
-    final limit = effectiveTotalLimit;
+    final limit = totalBudgetLimit;
     return limit > 0 ? totalSpentThisMonth / limit : 0.0;
   }
 
   bool get isOverTotalBudget =>
-      effectiveTotalLimit > 0 && totalSpentThisMonth > effectiveTotalLimit;
+      totalBudgetLimit > 0 && totalSpentThisMonth > totalBudgetLimit;
 
   bool get hasTotalBudget => _totalBudget != null;
 
-  double get totalRemaining => effectiveTotalLimit - totalSpentThisMonth;
+  double get totalRemaining => totalBudgetLimit - totalSpentThisMonth;
 
   /// Per-category budget summaries, sorted (over-budget first).
   List<CategoryBudgetSummary> get budgetSummaries =>
@@ -74,8 +71,8 @@ class BudgetViewModel extends ChangeNotifier {
     _totalBudget = _budgetRepo.getTotalBudget();
     _totalSpentThisMonth = _expenseRepo.getTotalForCurrentMonth();
 
-    // Calculate Rollover from last month
-    _calculateRollover();
+    // Calculate Savings from last month
+    _calculateSavings();
 
     final spent = _expenseRepo.getSpendingByCategoryForCurrentMonth();
     _summaries = _budgetRepo.buildBudgetSummaries(spent);
@@ -83,15 +80,24 @@ class BudgetViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _calculateRollover() {
+  void _calculateSavings() {
     final now = DateTime.now();
-    // Get last month's date
     final lastMonthDate = DateTime(now.year, now.month - 1, 1);
     
-    // We assume the budget limit was the same last month (Set and Forget system)
     final limit = totalBudgetLimit;
     if (limit <= 0) {
-      _rolloverFromLastMonth = 0;
+      _savingsFromLastMonth = 0;
+      return;
+    }
+
+    // Only check if user has history
+    final allExpenses = _expenseRepo.getAllExpenses();
+    final hasHistory = allExpenses.any((e) =>
+        e.date.year < now.year ||
+        (e.date.year == now.year && e.date.month < now.month));
+
+    if (!hasHistory) {
+      _savingsFromLastMonth = 0;
       return;
     }
 
@@ -102,9 +108,8 @@ class BudgetViewModel extends ChangeNotifier {
 
     final leftover = limit - spentLastMonth;
     
-    // Only rollover POSITIVE leftover. We don't "punish" by carrying over debt
-    // unless you want a strict system. Usually, rollover is a bonus.
-    _rolloverFromLastMonth = leftover > 0 ? leftover : 0.0;
+    // Positive leftover is considered "Savings Achieved"
+    _savingsFromLastMonth = leftover > 0 ? leftover : 0.0;
   }
 
   /// Sets or updates the overall monthly spending cap.
