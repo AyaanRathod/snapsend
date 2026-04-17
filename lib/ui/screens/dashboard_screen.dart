@@ -25,7 +25,7 @@ class _DashboardTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    
     return SafeArea(
       child: CustomScrollView(
         physics: const BouncingScrollPhysics(),
@@ -37,11 +37,12 @@ class _DashboardTab extends StatelessWidget {
           const SliverToBoxAdapter(child: BurnRateCard()),
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // "Recent Expenses" sticky header - Polished Font & Padding
+          // "Recent Expenses" sticky header
           SliverPersistentHeader(
             pinned: true,
             delegate: SliverFixedHeaderDelegate(
               child: Container(
+                // Use scaffoldBackgroundColor for seamless blending
                 color: theme.scaffoldBackgroundColor,
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 alignment: Alignment.centerLeft,
@@ -58,7 +59,6 @@ class _DashboardTab extends StatelessWidget {
           ),
 
           const RecentExpensesList(),
-          // Optimized bottom padding for FAB notch
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -158,5 +158,6 @@ class SliverFixedHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
+  // CHANGED: Set to true so theme changes (Light/Dark) trigger a color update
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => true;
 }
